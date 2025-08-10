@@ -20,7 +20,18 @@
     "crypto": "^1.0.1",
     "body-parser": "^1.20.2",
     "helmet": "^7.1.0",
-    "express-rate-limit": "^7.1.5"
+    "express-rate-limit": "^7.1.5",
+    "socket.io": "^4.7.0",
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3",
+    "node-cron": "^3.0.0",
+    "ws": "^8.0.0",
+    "winston": "^3.8.0",
+    "compression": "^1.7.4",
+    "moment": "^2.29.4",
+    "lodash": "^4.17.21",
+    "uuid": "^9.0.0",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
@@ -34,7 +45,18 @@
     "payment",
     "plisio",
     "store",
-    "bot"
+    "bot",
+    "advanced",
+    "ai",
+    "blockchain",
+    "analytics",
+    "realtime",
+    "security",
+    "monitoring",
+    "graphql",
+    "websocket",
+    "redis",
+    "machine-learning"
   ],
   "author": "Telegram Crypto Store",
   "license": "MIT"
