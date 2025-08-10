@@ -14,8 +14,21 @@ class AutoConfig {
     }
 
     detectEnvironment() {
-        // Check for Railway environment
-        if (process.env.RAILWAY_ENVIRONMENT) {
+        // Debug: Log Railway environment variables
+        if (process.env.NODE_ENV === 'production') {
+            console.log('🔍 Railway Environment Check:');
+            console.log('  RAILWAY_ENVIRONMENT:', process.env.RAILWAY_ENVIRONMENT);
+            console.log('  RAILWAY_PROJECT_ID:', process.env.RAILWAY_PROJECT_ID);
+            console.log('  RAILWAY_SERVICE_ID:', process.env.RAILWAY_SERVICE_ID);
+            console.log('  RAILWAY_DEPLOYMENT_ID:', process.env.RAILWAY_DEPLOYMENT_ID);
+            console.log('  PORT:', process.env.PORT);
+        }
+        
+        // Check for Railway environment (multiple possible indicators)
+        if (process.env.RAILWAY_ENVIRONMENT || 
+            process.env.RAILWAY_PROJECT_ID || 
+            process.env.RAILWAY_SERVICE_ID ||
+            process.env.RAILWAY_DEPLOYMENT_ID) {
             return 'railway';
         }
         
@@ -92,8 +105,9 @@ class AutoConfig {
                     url: process.env.DATABASE_URL,
                     ssl: true
                 };
+                // Use 0.0.0.0 for production/cloud environments
                 config.server = {
-                    host: '0.0.0.0',
+                    host: process.env.HOST || '0.0.0.0',
                     port: process.env.PORT || 3000,
                     trustProxy: true
                 };
