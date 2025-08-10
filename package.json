@@ -2,9 +2,9 @@
   "name": "telegram-crypto-store",
   "version": "1.0.1",
   "description": "Telegram Web Store with Crypto Payment Integration using Plisio",
-  "main": "server.js",
+  "main": "server-simple.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server-simple.js",
     "dev": "nodemon server.js",
     "migrate": "node migrations/migrate.js",
     "railway-setup": "node railway-setup.js",
