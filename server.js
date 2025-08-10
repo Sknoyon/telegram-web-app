@@ -11,6 +11,7 @@ const {
     productQueries, 
     orderQueries, 
     invoiceQueries, 
+    purchasedProductQueries,
     statsQueries 
 } = require('./database/db');
 require('dotenv').config();
@@ -136,12 +137,12 @@ class Server {
         // Create product (admin only)
         this.app.post('/api/products', this.adminAuth, async (req, res) => {
             try {
-                const { name, description, price_usd, image_url, stock } = req.body;
+                const { name, description, price_usd, image_url, mega_link, stock } = req.body;
                 
-                if (!name || !price_usd) {
+                if (!name || !price_usd || !mega_link) {
                     return res.status(400).json({ 
                         success: false, 
-                        error: 'Name and price are required' 
+                        error: 'Name, price, and mega link are required' 
                     });
                 }
 
@@ -150,6 +151,7 @@ class Server {
                     description,
                     price_usd: parseFloat(price_usd),
                     image_url,
+                    mega_link,
                     stock: parseInt(stock) || 0
                 });
 
@@ -163,13 +165,14 @@ class Server {
         // Update product (admin only)
         this.app.put('/api/products/:id', this.adminAuth, async (req, res) => {
             try {
-                const { name, description, price_usd, image_url, stock } = req.body;
+                const { name, description, price_usd, image_url, mega_link, stock } = req.body;
                 
                 const product = await productQueries.update(req.params.id, {
                     name,
                     description,
                     price_usd: parseFloat(price_usd),
                     image_url,
+                    mega_link,
                     stock: parseInt(stock)
                 });
 
@@ -364,6 +367,19 @@ class Server {
                 // Update order status if paid
                 if (webhookData.isPaid) {
                     await orderQueries.updateStatus(invoice.order_id, 'paid');
+                    
+                    // Get order details to record purchased products
+                    const order = await orderQueries.getById(invoice.order_id);
+                    if (order && order.items) {
+                        // Record each product as purchased
+                        for (const item of order.items) {
+                            await purchasedProductQueries.create(
+                                order.user_id, 
+                                item.product_id, 
+                                invoice.order_id
+                            );
+                        }
+                    }
                     
                     // Notify user and admin
                     await this.telegramBot.notifyPaymentReceived(invoice.order_id);

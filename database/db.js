@@ -65,25 +65,25 @@ const productQueries = {
     },
 
     async create(productData) {
-        const { name, description, price_usd, image_url, stock } = productData;
+        const { name, description, price_usd, image_url, mega_link, stock } = productData;
         const query = `
-            INSERT INTO products (name, description, price_usd, image_url, stock)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO products (name, description, price_usd, image_url, mega_link, stock)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `;
-        const result = await pool.query(query, [name, description, price_usd, image_url, stock]);
+        const result = await pool.query(query, [name, description, price_usd, image_url, mega_link, stock]);
         return result.rows[0];
     },
 
     async update(id, productData) {
-        const { name, description, price_usd, image_url, stock } = productData;
+        const { name, description, price_usd, image_url, mega_link, stock } = productData;
         const query = `
             UPDATE products 
-            SET name = $1, description = $2, price_usd = $3, image_url = $4, stock = $5
-            WHERE id = $6
+            SET name = $1, description = $2, price_usd = $3, image_url = $4, mega_link = $5, stock = $6
+            WHERE id = $7
             RETURNING *
         `;
-        const result = await pool.query(query, [name, description, price_usd, image_url, stock, id]);
+        const result = await pool.query(query, [name, description, price_usd, image_url, mega_link, stock, id]);
         return result.rows[0];
     },
 
@@ -268,16 +268,60 @@ const invoiceQueries = {
 };
 
 // Statistics
+// Purchased products operations
+const purchasedProductQueries = {
+    async create(userId, productId, orderId) {
+        const query = `
+            INSERT INTO purchased_products (user_id, product_id, order_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, product_id, order_id) DO NOTHING
+            RETURNING *
+        `;
+        const result = await pool.query(query, [userId, productId, orderId]);
+        return result.rows[0];
+    },
+
+    async getUserPurchasedProducts(userId) {
+        const query = `
+            SELECT 
+                pp.*,
+                p.name,
+                p.description,
+                p.mega_link,
+                o.created_at as order_date
+            FROM purchased_products pp
+            JOIN products p ON pp.product_id = p.id
+            JOIN orders o ON pp.order_id = o.id
+            WHERE pp.user_id = $1
+            ORDER BY pp.purchased_at DESC
+        `;
+        const result = await pool.query(query, [userId]);
+        return result.rows;
+    },
+
+    async hasAccess(userId, productId) {
+        const query = `
+            SELECT COUNT(*) > 0 as has_access
+            FROM purchased_products pp
+            JOIN orders o ON pp.order_id = o.id
+            WHERE pp.user_id = $1 AND pp.product_id = $2 AND o.status = 'paid'
+        `;
+        const result = await pool.query(query, [userId, productId]);
+        return result.rows[0].has_access;
+    }
+};
+
 const statsQueries = {
     async getDailyEarnings() {
         const query = `
             SELECT 
-                DATE(o.created_at) as date,
-                COUNT(o.id) as orders_count,
-                SUM(o.total_price) as total_earnings
-            FROM orders o
-            WHERE o.status = 'paid' AND o.created_at >= CURRENT_DATE - INTERVAL '30 days'
-            GROUP BY DATE(o.created_at)
+                DATE(created_at) as date,
+                SUM(total_price) as earnings,
+                COUNT(*) as orders
+            FROM orders 
+            WHERE status = 'paid' 
+                AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
             ORDER BY date DESC
         `;
         const result = await pool.query(query);
@@ -287,10 +331,10 @@ const statsQueries = {
     async getTotalStats() {
         const query = `
             SELECT 
-                COUNT(CASE WHEN status = 'paid' THEN 1 END) as total_paid_orders,
-                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_orders,
-                COALESCE(SUM(CASE WHEN status = 'paid' THEN total_price END), 0) as total_revenue,
-                COUNT(DISTINCT user_id) as unique_customers
+                COUNT(*) as total_orders,
+                SUM(CASE WHEN status = 'paid' THEN total_price ELSE 0 END) as total_revenue,
+                COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_orders,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_orders
             FROM orders
         `;
         const result = await pool.query(query);
@@ -304,5 +348,6 @@ module.exports = {
     productQueries,
     orderQueries,
     invoiceQueries,
+    purchasedProductQueries,
     statsQueries
 };

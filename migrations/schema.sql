@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price_usd DECIMAL(10, 2) NOT NULL,
     image_url TEXT,
+    mega_link TEXT, -- Mega download link for the product
     stock INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -62,6 +63,16 @@ CREATE TABLE IF NOT EXISTS invoices (
     expires_at TIMESTAMP
 );
 
+-- Purchased products table (tracks user access to products after payment)
+CREATE TABLE IF NOT EXISTS purchased_products (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, product_id, order_id)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
@@ -69,13 +80,15 @@ CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_invoices_order_id ON invoices(order_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_plisio_id ON invoices(plisio_invoice_id);
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
+CREATE INDEX IF NOT EXISTS idx_purchased_products_user_id ON purchased_products(user_id);
+CREATE INDEX IF NOT EXISTS idx_purchased_products_product_id ON purchased_products(product_id);
 
 -- Insert sample products
-INSERT INTO products (name, description, price_usd, image_url, stock) VALUES
-('Premium Digital Course', 'Complete guide to cryptocurrency trading', 99.99, 'https://via.placeholder.com/300x200', 100),
-('E-book Bundle', 'Collection of 5 bestselling e-books', 29.99, 'https://via.placeholder.com/300x200', 50),
-('Software License', 'Lifetime license for premium software', 199.99, 'https://via.placeholder.com/300x200', 25),
-('Consultation Session', '1-hour expert consultation', 149.99, 'https://via.placeholder.com/300x200', 10);
+INSERT INTO products (name, description, price_usd, image_url, mega_link, stock) VALUES
+('Premium Digital Course', 'Complete guide to cryptocurrency trading', 99.99, 'https://via.placeholder.com/300x200', 'https://mega.nz/file/example1', 100),
+('E-book Bundle', 'Collection of 5 bestselling e-books', 29.99, 'https://via.placeholder.com/300x200', 'https://mega.nz/file/example2', 50),
+('Software License', 'Lifetime license for premium software', 199.99, 'https://via.placeholder.com/300x200', 'https://mega.nz/file/example3', 25),
+('Consultation Session', '1-hour expert consultation', 149.99, 'https://via.placeholder.com/300x200', 'https://mega.nz/file/example4', 10);
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

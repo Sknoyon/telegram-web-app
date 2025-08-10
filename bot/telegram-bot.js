@@ -1,5 +1,5 @@
 const { Telegraf, Markup } = require('telegraf');
-const { userQueries, orderQueries, productQueries, invoiceQueries, statsQueries } = require('../database/db');
+const { userQueries, orderQueries, productQueries, invoiceQueries, purchasedProductQueries, statsQueries } = require('../database/db');
 const PlisioService = require('../services/plisio');
 require('dotenv').config();
 
@@ -60,7 +60,7 @@ class TelegramBot {
 
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.webApp('🛒 Open Store', `${this.baseUrl}/store`)],
-                [Markup.button.callback('📋 My Orders', 'my_orders')],
+                [Markup.button.callback('📋 My Orders', 'my_orders'), Markup.button.callback('📥 My Downloads', 'my_downloads')],
                 ctx.isAdmin ? [Markup.button.callback('⚙️ Admin Panel', 'admin_panel')] : []
             ].filter(row => row.length > 0));
 
@@ -126,6 +126,26 @@ class TelegramBot {
             await this.showUserOrders(ctx);
         });
 
+        // My Downloads command
+        this.bot.command('downloads', async (ctx) => {
+            await this.showUserDownloads(ctx);
+        });
+
+        // Admin product management commands
+        this.bot.command('addproduct', async (ctx) => {
+            if (!ctx.isAdmin) {
+                return ctx.reply('❌ You are not authorized to use this command.');
+            }
+            await this.startAddProduct(ctx);
+        });
+
+        this.bot.command('products', async (ctx) => {
+            if (!ctx.isAdmin) {
+                return ctx.reply('❌ You are not authorized to use this command.');
+            }
+            await this.showAdminProducts(ctx);
+        });
+
         // Callback query handlers
         this.bot.action('my_orders', async (ctx) => {
             await ctx.answerCbQuery();
@@ -153,6 +173,17 @@ class TelegramBot {
             }
             const orderId = parseInt(ctx.match[1]);
             await this.resendInvoice(ctx, orderId);
+        });
+
+        this.bot.action('my_downloads', async (ctx) => {
+            await ctx.answerCbQuery();
+            await this.showUserDownloads(ctx);
+        });
+
+        this.bot.action(/^download_(\d+)$/, async (ctx) => {
+            await ctx.answerCbQuery();
+            const productId = parseInt(ctx.match[1]);
+            await this.sendMegaLink(ctx, productId);
         });
 
         // Error handling
@@ -255,6 +286,19 @@ class TelegramBot {
                 buttons.push([Markup.button.callback('🔄 Resend Invoice', `resend_invoice_${orderId}`)]);
             }
 
+            // Show download links for paid orders
+            if (order.status === 'paid') {
+                message += `\n🎉 *Payment Completed!*\n`;
+                message += `Your digital products are ready for download:\n\n`;
+                
+                for (const item of order.items) {
+                    const product = await productQueries.getById(item.product_id);
+                    if (product && product.mega_link) {
+                        buttons.push([Markup.button.callback(`📥 Download ${item.product_name}`, `download_${item.product_id}`)]);
+                    }
+                }
+            }
+
             await ctx.reply(message, {
                 parse_mode: 'Markdown',
                 reply_markup: buttons.length > 0 ? Markup.inlineKeyboard(buttons).reply_markup : undefined
@@ -330,37 +374,187 @@ class TelegramBot {
     async notifyPaymentReceived(orderId) {
         try {
             const order = await orderQueries.getById(orderId);
-            if (!order) return;
+            if (!order) {
+                console.error('❌ Order not found for notification:', orderId);
+                return;
+            }
+
+            const user = await userQueries.findByTelegramId(order.telegram_id);
+            if (!user) {
+                console.error('❌ User not found for notification:', order.telegram_id);
+                return;
+            }
+
+            // Add products to purchased_products table
+            for (const item of order.items) {
+                await purchasedProductQueries.create(user.id, item.product_id, orderId);
+            }
 
             const message = `🎉 *Payment Received!*\n\n` +
-                `Your payment for Order #${orderId} has been confirmed!\n\n` +
-                `*Order Details:*\n` +
-                `💰 Amount: $${order.total_price}\n` +
-                `📦 Items: ${order.items.map(item => item.product_name).join(', ')}\n\n` +
+                `Your order #${order.id} has been paid successfully!\n` +
+                `Total: $${order.total_price}\n\n` +
+                `Your digital products are now available for download! 📥\n\n` +
                 `Thank you for your purchase! 🙏`;
 
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.callback('📋 View Order', `order_${orderId}`)],
+                [Markup.button.callback('📥 My Downloads', 'my_downloads')]
+            ]);
+
             await this.bot.telegram.sendMessage(order.telegram_id, message, {
-                parse_mode: 'Markdown'
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
             });
 
-            // Notify admins
-            const adminMessage = `💰 *New Payment Received*\n\n` +
-                `Order #${orderId}\n` +
-                `Customer: ${order.first_name} ${order.last_name || ''}\n` +
-                `Amount: $${order.total_price}\n` +
-                `Items: ${order.items.map(item => item.product_name).join(', ')}`;
-
-            for (const adminId of this.adminIds) {
-                try {
-                    await this.bot.telegram.sendMessage(adminId, adminMessage, {
-                        parse_mode: 'Markdown'
-                    });
-                } catch (error) {
-                    console.error(`Failed to notify admin ${adminId}:`, error.message);
-                }
-            }
+            console.log(`✅ Payment notification sent to user ${order.telegram_id} for order ${orderId}`);
         } catch (error) {
             console.error('❌ Error sending payment notification:', error);
+        }
+    }
+
+    async showUserDownloads(ctx) {
+        try {
+            const purchasedProducts = await purchasedProductQueries.getUserPurchasedProducts(ctx.user.id);
+            
+            if (purchasedProducts.length === 0) {
+                const keyboard = Markup.inlineKeyboard([
+                    [Markup.button.webApp('🛒 Start Shopping', `${this.baseUrl}/store`)]
+                ]);
+                
+                return ctx.reply('📥 *Your Downloads*\n\nYou haven\'t purchased any digital products yet. Start shopping to see your downloads here!', {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+
+            let message = '📥 *Your Downloads*\n\n';
+            const buttons = [];
+
+            for (const item of purchasedProducts) {
+                const product = await productQueries.getById(item.product_id);
+                if (product) {
+                    const purchaseDate = new Date(item.created_at).toLocaleDateString();
+                    
+                    message += `📦 *${product.name}*\n`;
+                    message += `📅 Purchased: ${purchaseDate}\n`;
+                    message += `💰 Price: $${product.price}\n\n`;
+
+                    if (product.mega_link) {
+                        buttons.push([Markup.button.callback(`📥 Download ${product.name}`, `download_${product.id}`)]);
+                    }
+                }
+            }
+
+            buttons.push([Markup.button.webApp('🛒 Continue Shopping', `${this.baseUrl}/store`)]);
+
+            await ctx.reply(message, {
+                parse_mode: 'Markdown',
+                reply_markup: Markup.inlineKeyboard(buttons).reply_markup
+            });
+        } catch (error) {
+            console.error('❌ Error showing user downloads:', error);
+            ctx.reply('❌ Error loading downloads. Please try again.');
+        }
+    }
+
+    async sendMegaLink(ctx, productId) {
+        try {
+            // Check if user has purchased this product
+             const hasPurchased = await purchasedProductQueries.hasAccess(ctx.user.id, productId);
+            
+            if (!hasPurchased) {
+                return ctx.reply('❌ You haven\'t purchased this product.');
+            }
+
+            const product = await productQueries.getById(productId);
+            if (!product || !product.mega_link) {
+                return ctx.reply('❌ Download link not available for this product.');
+            }
+
+            const message = `📥 *Download Link*\n\n` +
+                `Product: *${product.name}*\n` +
+                `Size: ${product.file_size || 'N/A'}\n\n` +
+                `Click the button below to download your product:\n\n` +
+                `⚠️ *Important:* This link is for your personal use only. Please do not share it with others.`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.url('📥 Download Now', product.mega_link)]
+            ]);
+
+            await ctx.reply(message, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+
+            console.log(`📥 Download link sent to user ${ctx.user.id} for product ${productId}`);
+        } catch (error) {
+            console.error('❌ Error sending mega link:', error);
+            ctx.reply('❌ Error accessing download link. Please try again.');
+        }
+    }
+
+    async startAddProduct(ctx) {
+        try {
+            const message = `📦 *Add New Product*\n\n` +
+                `Use the admin panel to add new products with all details including:\n\n` +
+                `• Product name and description\n` +
+                `• Price and category\n` +
+                `• Images and files\n` +
+                `• Mega.nz download links\n\n` +
+                `Click the button below to access the full admin panel:`;
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.webApp('⚙️ Open Admin Panel', `${this.baseUrl}/admin`)]
+            ]);
+
+            await ctx.reply(message, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+        } catch (error) {
+            console.error('❌ Error in startAddProduct:', error);
+            ctx.reply('❌ Error accessing product management.');
+        }
+    }
+
+    async showAdminProducts(ctx) {
+        try {
+            const products = await productQueries.getAll();
+            
+            if (products.length === 0) {
+                const keyboard = Markup.inlineKeyboard([
+                    [Markup.button.webApp('➕ Add First Product', `${this.baseUrl}/admin`)]
+                ]);
+                
+                return ctx.reply('📦 *Product Management*\n\nNo products found. Add your first product using the admin panel!', {
+                    parse_mode: 'Markdown',
+                    reply_markup: keyboard.reply_markup
+                });
+            }
+
+            let message = `📦 *Product Management*\n\n`;
+            message += `Total Products: ${products.length}\n\n`;
+
+            for (const product of products.slice(0, 10)) { // Show first 10 products
+                const status = product.is_active ? '✅' : '❌';
+                message += `${status} *${product.name}*\n`;
+                message += `💰 $${product.price}\n`;
+                message += `📂 ${product.category || 'Uncategorized'}\n`;
+                message += `🔗 ${product.mega_link ? 'Has download link' : 'No download link'}\n\n`;
+            }
+
+            const keyboard = Markup.inlineKeyboard([
+                [Markup.button.webApp('⚙️ Manage Products', `${this.baseUrl}/admin`)],
+                [Markup.button.webApp('➕ Add New Product', `${this.baseUrl}/admin`)]
+            ]);
+
+            await ctx.reply(message, {
+                parse_mode: 'Markdown',
+                reply_markup: keyboard.reply_markup
+            });
+        } catch (error) {
+            console.error('❌ Error showing admin products:', error);
+            ctx.reply('❌ Error loading products.');
         }
     }
 
