@@ -88,6 +88,11 @@ class Server {
     }
 
     setupRoutes() {
+        // Root route - redirect to store
+        this.app.get('/', (req, res) => {
+            res.redirect('/store');
+        });
+
         // Health check
         this.app.get('/health', (req, res) => {
             res.json({ status: 'OK', timestamp: new Date().toISOString() });
