@@ -167,18 +167,23 @@ class Server {
             res.redirect('/store');
         });
 
-        // Basic health check for Railway deployment
+        // Health check endpoint - simple and fast for Railway
         this.app.get('/health', (req, res) => {
             res.status(200).json({
                 status: 'healthy',
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime(),
-                services: {
-                    server: 'running',
-                    database: 'connected',
-                    orchestrator: 'active'
-                }
+                environment: this.config.environment
             });
+        });
+        
+        // Alternative health check paths
+        this.app.get('/healthz', (req, res) => {
+            res.status(200).send('OK');
+        });
+        
+        this.app.get('/ping', (req, res) => {
+            res.status(200).send('pong');
         });
 
         // Basic system metrics endpoint
