@@ -14,7 +14,7 @@ According to Railway documentation, when using health checks, you MUST set a POR
 3. Go to "Variables" tab
 4. Add a new environment variable:
    - **Name**: `PORT`
-   - **Value**: `3000` (or whatever port your app uses)
+   - **Value**: `8080`
 
 ### Step 2: Verify Other Required Variables
 Ensure these variables are also set:

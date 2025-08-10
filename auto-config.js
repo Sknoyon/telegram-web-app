@@ -56,7 +56,7 @@ class AutoConfig {
     loadConfiguration() {
         const config = {
             environment: this.environment,
-            port: process.env.PORT || 3000,
+            port: process.env.PORT || 8080,
             nodeEnv: process.env.NODE_ENV || 'production'
         };
 
@@ -70,7 +70,7 @@ class AutoConfig {
                 };
                 config.server = {
                     host: '0.0.0.0',
-                    port: process.env.PORT || 3000,
+                    port: process.env.PORT || 8080,
                     trustProxy: true
                 };
                 config.telegram = {
@@ -91,7 +91,7 @@ class AutoConfig {
                 };
                 config.server = {
                     host: 'localhost',
-                    port: process.env.PORT || 3000,
+                    port: process.env.PORT || 8080,
                     trustProxy: false
                 };
                 config.telegram = {
