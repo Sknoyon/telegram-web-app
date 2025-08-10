@@ -10,6 +10,7 @@ class AutoConfig {
     constructor() {
         this.environment = this.detectEnvironment();
         this.config = this.loadConfiguration();
+        this.displayed = false;
     }
 
     detectEnvironment() {
@@ -154,6 +155,12 @@ class AutoConfig {
     }
 
     displayConfiguration() {
+        if (this.displayed) {
+            return;
+        }
+        
+        this.displayed = true;
+        
         console.log('🔧 Auto-Configuration Results:');
         console.log(`📍 Environment: ${this.environment}`);
         console.log(`🌐 Server: ${this.config.server.host}:${this.config.server.port}`);
@@ -194,7 +201,7 @@ class AutoConfig {
 // Auto-detect and configure on module load
 const autoConfig = new AutoConfig();
 
-// Display configuration if running directly
+// Only display configuration if running directly, not when required
 if (require.main === module) {
     autoConfig.displayConfiguration();
 }
