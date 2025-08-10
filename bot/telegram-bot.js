@@ -195,6 +195,10 @@ class TelegramBot {
 
     async showUserOrders(ctx) {
         try {
+            if (!ctx.user) {
+                return ctx.reply('❌ User not found. Please try /start command first.');
+            }
+            
             const orders = await orderQueries.getByUser(ctx.user.id);
             
             if (orders.length === 0) {
@@ -244,6 +248,10 @@ class TelegramBot {
 
     async showOrderDetails(ctx, orderId) {
         try {
+            if (!ctx.user) {
+                return ctx.reply('❌ User not found. Please try /start command first.');
+            }
+            
             const order = await orderQueries.getById(orderId);
             
             if (!order || (order.user_id !== ctx.user.id && !ctx.isAdmin)) {
@@ -414,6 +422,10 @@ class TelegramBot {
 
     async showUserDownloads(ctx) {
         try {
+            if (!ctx.user) {
+                return ctx.reply('❌ User not found. Please try /start command first.');
+            }
+            
             const purchasedProducts = await purchasedProductQueries.getUserPurchasedProducts(ctx.user.id);
             
             if (purchasedProducts.length === 0) {
@@ -459,6 +471,10 @@ class TelegramBot {
 
     async sendMegaLink(ctx, productId) {
         try {
+            if (!ctx.user) {
+                return ctx.reply('❌ User not found. Please try /start command first.');
+            }
+            
             // Check if user has purchased this product
              const hasPurchased = await purchasedProductQueries.hasAccess(ctx.user.id, productId);
             
