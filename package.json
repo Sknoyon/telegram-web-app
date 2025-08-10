@@ -9,6 +9,7 @@
     "migrate": "node migrations/migrate.js",
     "railway-setup": "node railway-setup.js",
     "railway-debug": "node railway-debug.js",
+    "railway-force-fix": "node railway-force-fix.js",
     "deploy": "railway up"
   },
   "dependencies": {

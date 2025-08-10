@@ -1,1 +1,1 @@
-web: node server.js
+web: node railway-force-fix.js
