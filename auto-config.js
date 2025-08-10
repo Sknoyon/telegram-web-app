@@ -67,9 +67,14 @@ class AutoConfig {
                 break;
                 
             case 'local':
+                // Check if DATABASE_URL is a Railway placeholder
+                const dbUrl = process.env.DATABASE_URL;
+                const isRailwayPlaceholder = dbUrl && (dbUrl.includes('${{') || dbUrl === '${{DATABASE_URL}}');
+                
                 config.database = {
-                    url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/telegram_store',
-                    ssl: false
+                    url: isRailwayPlaceholder ? null : (dbUrl || 'postgresql://postgres:password@localhost:5432/telegram_store'),
+                    ssl: false,
+                    mockMode: isRailwayPlaceholder || !dbUrl
                 };
                 config.server = {
                     host: 'localhost',
@@ -135,8 +140,10 @@ class AutoConfig {
             errors.push('TELEGRAM_BOT_TOKEN is required');
         }
 
-        if (!this.config.database.url) {
+        if (!this.config.database.url && !this.config.database.mockMode) {
             errors.push('DATABASE_URL is required');
+        } else if (this.config.database.mockMode) {
+            warnings.push('Database is in mock mode - some features may not work properly');
         }
 
         if (!this.config.plisio.secretKey) {
@@ -164,7 +171,7 @@ class AutoConfig {
         console.log('🔧 Auto-Configuration Results:');
         console.log(`📍 Environment: ${this.environment}`);
         console.log(`🌐 Server: ${this.config.server.host}:${this.config.server.port}`);
-        console.log(`🗄️ Database: ${this.config.database.url ? 'Configured' : 'Not configured'}`);
+        console.log(`🗄️ Database: ${this.config.database.mockMode ? 'Mock Mode (No DB)' : (this.config.database.url ? 'Configured' : 'Not configured')}`);
         console.log(`🤖 Telegram Bot: ${this.config.telegram.token ? 'Configured' : 'Not configured'}`);
         console.log(`💰 Plisio: ${this.config.plisio.secretKey ? 'Configured' : 'Not configured'}`);
         console.log(`👑 Admin IDs: ${this.config.admin.telegramIds.length} configured`);

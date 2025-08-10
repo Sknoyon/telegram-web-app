@@ -4,11 +4,13 @@ const PlisioService = require('../services/plisio');
 require('dotenv').config();
 
 class TelegramBot {
-    constructor() {
+    constructor(config = null) {
         this.bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
         this.plisio = new PlisioService();
         this.adminIds = process.env.ADMIN_TELEGRAM_IDS?.split(',').map(id => parseInt(id)) || [];
         this.baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        this.config = config;
+        this.mockMode = config?.database?.mockMode || false;
         
         this.setupCommands();
         this.setupMiddleware();
@@ -18,24 +20,38 @@ class TelegramBot {
         // User registration middleware
         this.bot.use(async (ctx, next) => {
             if (ctx.from) {
-                try {
-                    let user = await userQueries.findByTelegramId(ctx.from.id);
-                    
-                    if (!user) {
-                        user = await userQueries.create({
-                            telegram_id: ctx.from.id,
-                            username: ctx.from.username,
-                            first_name: ctx.from.first_name,
-                            last_name: ctx.from.last_name
-                        });
-                        console.log(`👤 New user registered: ${user.first_name} (${user.telegram_id})`);
-                    } else {
-                        await userQueries.updateLastActive(ctx.from.id);
+                if (this.mockMode) {
+                    // Create a mock user object when database is not available
+                    ctx.user = {
+                        id: 1,
+                        telegram_id: ctx.from.id,
+                        username: ctx.from.username,
+                        first_name: ctx.from.first_name,
+                        last_name: ctx.from.last_name,
+                        created_at: new Date(),
+                        last_active: new Date()
+                    };
+                    console.log(`👤 Mock user created: ${ctx.user.first_name} (${ctx.user.telegram_id})`);
+                } else {
+                    try {
+                        let user = await userQueries.findByTelegramId(ctx.from.id);
+                        
+                        if (!user) {
+                            user = await userQueries.create({
+                                telegram_id: ctx.from.id,
+                                username: ctx.from.username,
+                                first_name: ctx.from.first_name,
+                                last_name: ctx.from.last_name
+                            });
+                            console.log(`👤 New user registered: ${user.first_name} (${user.telegram_id})`);
+                        } else {
+                            await userQueries.updateLastActive(ctx.from.id);
+                        }
+                        
+                        ctx.user = user;
+                    } catch (error) {
+                        console.error('❌ Error in user middleware:', error);
                     }
-                    
-                    ctx.user = user;
-                } catch (error) {
-                    console.error('❌ Error in user middleware:', error);
                 }
             }
             return next();
@@ -576,8 +592,19 @@ class TelegramBot {
 
     async start() {
         try {
+            if (this.mockMode) {
+                console.log('🤖 Telegram bot started in mock mode (database unavailable)');
+                return;
+            }
+            
             // Add timeout to prevent hanging
-            const launchPromise = this.bot.launch();
+            const launchPromise = this.bot.launch({
+                polling: {
+                    timeout: 30,
+                    limit: 100,
+                    allowedUpdates: ['message', 'callback_query']
+                }
+            });
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error('Bot launch timeout after 10 seconds')), 10000);
             });

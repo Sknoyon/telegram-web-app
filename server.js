@@ -35,7 +35,7 @@ class Server {
         this.port = config.server.port;
         this.host = config.server.host;
         this.config = config;
-        this.telegramBot = new TelegramBot();
+        this.telegramBot = new TelegramBot(this.config);
         this.plisio = new PlisioService();
         
         this.setupMiddleware();
