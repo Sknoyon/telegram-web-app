@@ -16,12 +16,20 @@ const HOST = '0.0.0.0'; // Railway requires 0.0.0.0
 console.log('🚨 RAILWAY FORCE FIX ACTIVATED');
 console.log('=' .repeat(60));
 
+// Required environment variables
+const requiredEnvVars = [
+    'NODE_ENV',
+    'PORT',
+    'TELEGRAM_BOT_TOKEN',
+    'BASE_URL'
+];
+
 // Environment diagnostics
 console.log('\n📋 COMPLETE ENVIRONMENT AUDIT:');
 console.log(`PORT: ${process.env.PORT || 'NOT SET ❌'}`);
 console.log(`RAILWAY_PORT: ${process.env.RAILWAY_PORT || 'NOT SET'}`);
 console.log(`NODE_ENV: ${process.env.NODE_ENV || 'NOT SET ❌'}`);
-console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET ✅' : 'NOT SET ❌'}`);
+console.log(`DATABASE_URL: ${process.env.DATABASE_URL ? 'SET ✅' : 'NOT SET (using local file)'}`);
 console.log(`TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? 'SET ✅' : 'NOT SET ❌'}`);
 console.log(`BASE_URL: ${process.env.BASE_URL || 'NOT SET ❌'}`);
 

@@ -53,9 +53,10 @@ git push origin master
 2. Add these variables:
    - `PORT` = `8080`
    - `NODE_ENV` = `production`
-   - `DATABASE_URL` = (your PostgreSQL URL)
    - `TELEGRAM_BOT_TOKEN` = (your bot token)
    - `BASE_URL` = (your Railway domain)
+
+**Note**: DATABASE_URL is not needed since you're using a local database file.
 
 ### Step 3: Redeploy
 After setting variables, trigger a new deployment.
