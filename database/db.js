@@ -1,32 +1,107 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
-});
+// Auto-configuration for mock mode detection
+const autoConfig = require('../auto-config');
+const config = autoConfig.getConfig();
 
-// Test database connection
-pool.on('connect', () => {
-    console.log('🔗 Connected to PostgreSQL database');
-});
+let pool = null;
+let mockMode = false;
 
-pool.on('error', (err) => {
-    console.error('❌ Database connection error:', err);
-});
+// Initialize database connection or mock mode
+if (config.database.mockMode) {
+    mockMode = true;
+    console.log('🔧 Database running in mock mode');
+} else {
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+    });
+
+    // Test database connection
+    pool.on('connect', () => {
+        console.log('🔗 Connected to PostgreSQL database');
+    });
+
+    pool.on('error', (err) => {
+        console.error('❌ Database connection error:', err);
+    });
+}
+
+// Mock data for testing
+const mockData = {
+    users: [
+        {
+            id: 1,
+            telegram_id: 123456789,
+            username: 'testuser',
+            first_name: 'Test',
+            last_name: 'User',
+            is_admin: false,
+            joined_at: new Date(),
+            last_active: new Date()
+        }
+    ],
+    products: [
+        {
+            id: 1,
+            name: 'Sample Product',
+            description: 'This is a sample product for testing',
+            price_usd: 9.99,
+            image_url: 'https://via.placeholder.com/300x200',
+            mega_link: 'https://mega.nz/sample',
+            stock: 10,
+            is_active: true,
+            created_at: new Date()
+        },
+        {
+            id: 2,
+            name: 'Premium Package',
+            description: 'Premium content package',
+            price_usd: 19.99,
+            image_url: 'https://via.placeholder.com/300x200',
+            mega_link: 'https://mega.nz/premium',
+            stock: 5,
+            is_active: true,
+            created_at: new Date()
+        }
+    ],
+    orders: [],
+    invoices: [],
+    purchasedProducts: []
+};
 
 // User operations
 const userQueries = {
     async findByTelegramId(telegramId) {
+        if (mockMode) {
+            return mockData.users.find(u => u.telegram_id === parseInt(telegramId)) || null;
+        }
         const query = 'SELECT * FROM users WHERE telegram_id = $1';
         const result = await pool.query(query, [telegramId]);
         return result.rows[0];
     },
 
     async create(userData) {
+        if (mockMode) {
+            const { telegram_id, username, first_name, last_name } = userData;
+            const isAdmin = process.env.ADMIN_TELEGRAM_IDS?.split(',').includes(telegram_id.toString()) || false;
+            const newUser = {
+                id: mockData.users.length + 1,
+                telegram_id: parseInt(telegram_id),
+                username,
+                first_name,
+                last_name,
+                is_admin: isAdmin,
+                joined_at: new Date(),
+                last_active: new Date()
+            };
+            mockData.users.push(newUser);
+            return newUser;
+        }
         const { telegram_id, username, first_name, last_name } = userData;
         const query = `
             INSERT INTO users (telegram_id, username, first_name, last_name, is_admin)
@@ -39,11 +114,21 @@ const userQueries = {
     },
 
     async updateLastActive(telegramId) {
+        if (mockMode) {
+            const user = mockData.users.find(u => u.telegram_id === parseInt(telegramId));
+            if (user) {
+                user.last_active = new Date();
+            }
+            return;
+        }
         const query = 'UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE telegram_id = $1';
         await pool.query(query, [telegramId]);
     },
 
     async getAll() {
+        if (mockMode) {
+            return [...mockData.users].sort((a, b) => new Date(b.joined_at) - new Date(a.joined_at));
+        }
         const query = 'SELECT * FROM users ORDER BY joined_at DESC';
         const result = await pool.query(query);
         return result.rows;
@@ -53,12 +138,18 @@ const userQueries = {
 // Product operations
 const productQueries = {
     async getAll() {
+        if (mockMode) {
+            return mockData.products.filter(p => p.is_active);
+        }
         const query = 'SELECT * FROM products WHERE is_active = true ORDER BY created_at DESC';
         const result = await pool.query(query);
         return result.rows;
     },
 
     async getById(id) {
+        if (mockMode) {
+            return mockData.products.find(p => p.id === parseInt(id) && p.is_active);
+        }
         const query = 'SELECT * FROM products WHERE id = $1 AND is_active = true';
         const result = await pool.query(query, [id]);
         return result.rows[0];
