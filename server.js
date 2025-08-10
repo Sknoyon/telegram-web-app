@@ -94,7 +94,7 @@ class Server {
         // Advanced CORS configuration
         this.app.use(cors({
             origin: process.env.NODE_ENV === 'production' 
-                ? [process.env.BASE_URL, 'https://web.telegram.org']
+                ? [process.env.BASE_URL, 'https://web.telegram.org', 'https://healthcheck.railway.app']
                 : true,
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
