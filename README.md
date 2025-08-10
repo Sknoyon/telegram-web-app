@@ -189,12 +189,21 @@ railway up
 2. Verify your account
 3. Get API credentials from dashboard
 
-### 2. Configure Webhook
+### 2. Configure Integration
 
-1. In Plisio dashboard, set webhook URL to:
-   `https://your-app.railway.app/api/webhook/plisio`
-2. Enable webhook notifications
-3. Set secret key for signature verification
+1. **Integration type**: Custom
+2. **Copy your Secret key** from dashboard
+3. **Set Status URL**: `https://ewhoreweb.up.railway.app/webhook/plisio/status`
+4. **Set Success URL**: `https://ewhoreweb.up.railway.app/payment/success`
+5. **Set Failed URL**: `https://ewhoreweb.up.railway.app/payment/failed`
+6. **Commission**: Site (recommended)
+7. **Enable supported cryptocurrencies** (Bitcoin, Litecoin, Dogecoin, etc.)
+8. **Update environment variables**:
+   ```env
+   PLISIO_API_KEY=your_api_key_from_dashboard
+   PLISIO_SECRET_KEY=your_secret_key_from_dashboard
+   ```
+9. **Configure Railway Environment**: Add the same variables in Railway dashboard
 
 ## 🏗️ Project Structure
 
