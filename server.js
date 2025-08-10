@@ -462,7 +462,7 @@ class Server {
             }
             
             // Start Express server
-            this.app.listen(this.port, () => {
+            this.app.listen(this.port, '0.0.0.0', () => {
                 console.log(`🚀 Server running on port ${this.port}`);
                 console.log(`🌐 Store URL: ${process.env.BASE_URL}/store`);
                 console.log(`⚙️ Admin URL: ${process.env.BASE_URL}/admin`);
