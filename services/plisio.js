@@ -4,12 +4,11 @@ require('dotenv').config();
 
 class PlisioService {
     constructor() {
-        this.apiKey = process.env.PLISIO_API_KEY;
         this.secretKey = process.env.PLISIO_SECRET_KEY;
         this.baseUrl = 'https://plisio.net/api/v1';
         
-        if (!this.apiKey) {
-            throw new Error('PLISIO_API_KEY is required');
+        if (!this.secretKey) {
+            throw new Error('PLISIO_SECRET_KEY is required');
         }
     }
 
@@ -34,7 +33,7 @@ class PlisioService {
             } = invoiceData;
 
             const params = {
-                api_key: this.apiKey,
+                api_key: this.secretKey,
                 currency,
                 amount,
                 order_name,
@@ -90,7 +89,7 @@ class PlisioService {
         try {
             const response = await axios.get(`${this.baseUrl}/operations`, {
                 params: {
-                    api_key: this.apiKey,
+                    api_key: this.secretKey,
                     id: invoiceId
                 },
                 timeout: 15000
@@ -115,7 +114,7 @@ class PlisioService {
         try {
             const response = await axios.get(`${this.baseUrl}/currencies`, {
                 params: {
-                    api_key: this.apiKey
+                    api_key: this.secretKey
                 },
                 timeout: 15000
             });

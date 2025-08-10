@@ -74,7 +74,6 @@ Copy `.env.example` to `.env` and configure:
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
 # Plisio API Configuration
-PLISIO_API_KEY=your_plisio_api_key_here
 PLISIO_SECRET_KEY=your_plisio_secret_key_here
 
 # Admin Configuration (comma-separated Telegram IDs)
@@ -132,16 +131,15 @@ railway init
 
 # Add PostgreSQL database
 railway add postgresql
-
+```bash
 # Set environment variables
 railway variables set TELEGRAM_BOT_TOKEN=your_bot_token
-railway variables set PLISIO_API_KEY=your_plisio_key
 railway variables set PLISIO_SECRET_KEY=your_plisio_secret
 railway variables set ADMIN_TELEGRAM_IDS=your_telegram_ids
 railway variables set WEBHOOK_SECRET=your_webhook_secret
 railway variables set JWT_SECRET=your_jwt_secret
 railway variables set NODE_ENV=production
-
+```
 # Deploy
 railway up
 ```
@@ -187,7 +185,7 @@ railway up
 
 1. Sign up at [plisio.net](https://plisio.net)
 2. Verify your account
-3. Get API credentials from dashboard
+3. Get Secret Key from dashboard
 
 ### 2. Configure Integration
 
@@ -200,7 +198,6 @@ railway up
 7. **Enable supported cryptocurrencies** (Bitcoin, Litecoin, Dogecoin, etc.)
 8. **Update environment variables**:
    ```env
-   PLISIO_API_KEY=your_api_key_from_dashboard
    PLISIO_SECRET_KEY=your_secret_key_from_dashboard
    ```
 9. **Configure Railway Environment**: Add the same variables in Railway dashboard
