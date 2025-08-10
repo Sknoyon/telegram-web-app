@@ -16,10 +16,25 @@ const {
 } = require('./database/db');
 require('dotenv').config();
 
+// Auto-configuration for environment detection
+const autoConfig = require('./auto-config');
+const config = autoConfig.getConfig();
+
+// Display configuration on startup
+autoConfig.displayConfiguration();
+
+// Exit if configuration is invalid
+if (!autoConfig.isValid()) {
+    console.error('❌ Invalid configuration. Please check your environment variables.');
+    process.exit(1);
+}
+
 class Server {
     constructor() {
         this.app = express();
-        this.port = process.env.PORT || 3000;
+        this.port = config.server.port;
+        this.host = config.server.host;
+        this.config = config;
         this.telegramBot = new TelegramBot();
         this.plisio = new PlisioService();
         
@@ -457,20 +472,34 @@ class Server {
                 await this.telegramBot.start();
                 console.log('✅ Telegram bot started successfully');
             } catch (botError) {
-                console.warn('⚠️ Telegram bot failed to start (likely invalid token):', botError.message);
+                console.warn('⚠️ Telegram bot failed to start:', botError.message);
                 console.log('📝 Server will continue running for development/testing');
             }
             
             // Start Express server
-            this.app.listen(this.port, '0.0.0.0', () => {
-                console.log(`🚀 Server running on port ${this.port}`);
-                console.log(`🌐 Store URL: ${process.env.BASE_URL}/store`);
-                console.log(`⚙️ Admin URL: ${process.env.BASE_URL}/admin`);
-                console.log('\n📋 To use this application:');
-                console.log('1. Set valid TELEGRAM_BOT_TOKEN in .env file');
-                console.log('2. Set valid PLISIO_API_KEY and PLISIO_SECRET_KEY in .env file');
-                console.log('3. Configure DATABASE_URL for PostgreSQL connection');
-                console.log('4. Add your Telegram ID to ADMIN_TELEGRAM_IDS');
+            this.app.listen(this.port, this.host, () => {
+                console.log(`\n🚀 Server started successfully!`);
+                console.log(`📍 Environment: ${this.config.environment}`);
+                console.log(`🌐 Server: http://${this.host}:${this.port}`);
+                
+                if (process.env.BASE_URL) {
+                    console.log(`🛍️ Store URL: ${process.env.BASE_URL}/store`);
+                    console.log(`⚙️ Admin URL: ${process.env.BASE_URL}/admin`);
+                    console.log(`🔗 Health Check: ${process.env.BASE_URL}/health`);
+                } else {
+                    console.log(`🛍️ Store URL: http://${this.host}:${this.port}/store`);
+                    console.log(`⚙️ Admin URL: http://${this.host}:${this.port}/admin`);
+                    console.log(`🔗 Health Check: http://${this.host}:${this.port}/health`);
+                }
+                
+                // Environment-specific instructions
+                if (this.config.environment === 'railway') {
+                    console.log('\n🚂 Railway Deployment Active');
+                    console.log('💡 Remember to set BASE_URL to your Railway domain');
+                } else if (this.config.environment === 'local') {
+                    console.log('\n💻 Local Development Mode');
+                    console.log('💡 Use "npm run railway-setup" for Railway deployment');
+                }
             });
         } catch (error) {
             console.error('❌ Failed to start server:', error);

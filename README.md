@@ -47,6 +47,49 @@ A complete Telegram Web Store with cryptocurrency payment integration using Plis
 - Invoice management
 - Performance optimized with indexes
 
+### 🔧 Auto-Configuration
+- **Environment Detection**: Automatically detects Railway, Heroku, Vercel, AWS, or local environments
+- **Smart Configuration**: Applies environment-specific settings (SSL, host binding, etc.)
+- **Validation**: Checks required environment variables and displays helpful warnings
+- **One-Click Railway Setup**: Automated Railway deployment with `npm run railway-setup`
+- **Configuration Display**: Shows current environment settings on startup
+
+## ⚡ Quick Start
+
+### 🚂 Railway Deployment (Recommended)
+```bash
+# 1. Clone the repository
+git clone https://github.com/Sknoyon/telegram-web-app.git
+cd telegram-web-app
+
+# 2. Install dependencies
+npm install
+
+# 3. Auto-setup Railway deployment
+npm run railway-setup
+```
+
+### 💻 Local Development
+```bash
+# 1. Clone and install
+git clone https://github.com/Sknoyon/telegram-web-app.git
+cd telegram-web-app
+npm install
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with your credentials
+
+# 3. Start with auto-configuration
+npm start
+```
+
+The application will automatically:
+- ✅ Detect your environment (Railway/Local/Production)
+- ✅ Apply appropriate configurations
+- ✅ Validate environment variables
+- ✅ Display helpful setup information
+
 ## 📋 Prerequisites
 
 - Node.js 18+ 
