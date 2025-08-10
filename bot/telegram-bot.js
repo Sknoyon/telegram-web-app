@@ -597,19 +597,44 @@ class TelegramBot {
                 return;
             }
             
-            // Add timeout to prevent hanging
-            const launchPromise = this.bot.launch({
-                polling: {
-                    timeout: 30,
-                    limit: 100,
-                    allowedUpdates: ['message', 'callback_query']
-                }
-            });
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Bot launch timeout after 10 seconds')), 10000);
-            });
+            // Check if we should use webhooks (production/Railway) or polling (local)
+            const useWebhook = process.env.NODE_ENV === 'production' && process.env.BASE_URL;
             
-            await Promise.race([launchPromise, timeoutPromise]);
+            if (useWebhook) {
+                // Set up webhook for production
+                const webhookUrl = `${process.env.BASE_URL}/webhook`;
+                console.log(`🔗 Setting up Telegram webhook: ${webhookUrl}`);
+                
+                try {
+                    await this.bot.telegram.setWebhook(webhookUrl);
+                    console.log('✅ Telegram webhook set successfully');
+                    
+                    // Verify webhook was set
+                    const webhookInfo = await this.bot.telegram.getWebhookInfo();
+                    console.log(`📡 Webhook info: ${webhookInfo.url}, pending: ${webhookInfo.pending_update_count}`);
+                } catch (webhookError) {
+                    console.error('❌ Failed to set webhook:', webhookError);
+                    throw webhookError;
+                }
+            } else {
+                // Use polling for local development
+                console.log('🔄 Starting bot with polling mode (local development)');
+                
+                // Add timeout to prevent hanging
+                const launchPromise = this.bot.launch({
+                    polling: {
+                        timeout: 30,
+                        limit: 100,
+                        allowedUpdates: ['message', 'callback_query']
+                    }
+                });
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Bot launch timeout after 10 seconds')), 10000);
+                });
+                
+                await Promise.race([launchPromise, timeoutPromise]);
+            }
+            
             console.log('🤖 Telegram bot started successfully');
             
             // Graceful stop

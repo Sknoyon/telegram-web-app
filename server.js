@@ -493,6 +493,21 @@ class Server {
     }
 
     setupWebhookRoutes() {
+        // Telegram webhook
+        this.app.post('/webhook', async (req, res) => {
+            try {
+                console.log('📨 Received Telegram webhook:', req.body);
+                
+                // Process the update through the bot
+                await this.telegramBot.getBot().handleUpdate(req.body);
+                
+                res.status(200).json({ ok: true });
+            } catch (error) {
+                console.error('❌ Telegram webhook processing error:', error);
+                res.status(500).json({ error: 'Webhook processing failed' });
+            }
+        });
+        
         // Plisio webhook
         this.app.post('/api/webhook/plisio', async (req, res) => {
             try {

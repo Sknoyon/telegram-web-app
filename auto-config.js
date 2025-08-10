@@ -108,7 +108,7 @@ class AutoConfig {
                 // Use 0.0.0.0 for production/cloud environments
                 config.server = {
                     host: process.env.HOST || '0.0.0.0',
-                    port: process.env.PORT || 3000,
+                    port: process.env.PORT || 8080,
                     trustProxy: true
                 };
                 config.telegram = {
