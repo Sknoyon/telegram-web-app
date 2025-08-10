@@ -10,12 +10,9 @@
 3. Select "Deploy from GitHub repo"
 4. Choose your `telegram-web-app` repository
 
-## Step 2: Add PostgreSQL Database
-1. In your Railway project dashboard
-2. Click "+ New Service"
-3. Select "Database" → "PostgreSQL"
-4. Railway will automatically create a PostgreSQL instance
-5. The `DATABASE_URL` environment variable will be automatically provided
+## Step 2: Database Configuration
+**Note**: This project uses a local SQLite database file, so no external database service is required.
+The database file will be created automatically when the application starts.
 
 ## Step 3: Configure Environment Variables
 In Railway project settings → Variables, add these:
@@ -31,7 +28,7 @@ PLISIO_SECRET_KEY=your_plisio_secret_key
 ADMIN_TELEGRAM_IDS=your_telegram_id
 
 # Server Configuration
-PORT=3000
+PORT=8080
 NODE_ENV=production
 
 # Security (generate secure random strings)
@@ -42,16 +39,11 @@ JWT_SECRET=your_jwt_secret
 BASE_URL=https://your-app-name.up.railway.app
 ```
 
-**Note:** `DATABASE_URL` is automatically provided by Railway PostgreSQL service.
+**Note:** DATABASE_URL is not required since this project uses a local SQLite database file.
 
-## Step 4: Database Migration
-After deployment, run the database migration:
-
-1. Go to Railway project → your service
-2. Open "Deployments" tab
-3. Click on latest deployment
-4. Open "View Logs"
-5. The migration should run automatically on first startup
+## Step 4: Database Setup
+The SQLite database will be automatically created when the application starts.
+No manual migration is required - the database schema will be initialized automatically.
 
 ## Step 5: Set Up Telegram Webhook
 After successful deployment:

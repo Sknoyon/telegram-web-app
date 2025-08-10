@@ -24,10 +24,11 @@ Our debug script confirms the health endpoint works perfectly on port 8080 local
 ### Step 2: Verify Other Required Variables
 Ensure these variables are also set:
 - `NODE_ENV=production`
-- `DATABASE_URL` (your PostgreSQL connection string)
 - `TELEGRAM_BOT_TOKEN`
 - `BASE_URL` (your Railway domain)
 - All other variables from RAILWAY_DEPLOYMENT.md
+
+**Note**: DATABASE_URL is not required since this project uses a local SQLite database file.
 
 ### Step 3: Redeploy
 After setting the PORT variable, trigger a new deployment by pushing any small change or using Railway's redeploy button.

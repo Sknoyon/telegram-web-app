@@ -93,10 +93,11 @@ The application will automatically:
 ## 📋 Prerequisites
 
 - Node.js 18+ 
-- PostgreSQL database
 - Telegram Bot Token (from @BotFather)
 - Plisio API credentials
 - Railway account (for deployment)
+
+**Note**: No external database required - uses local SQLite database file.
 
 ## 🛠️ Installation
 

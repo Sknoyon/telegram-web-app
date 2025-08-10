@@ -15,7 +15,7 @@ const ENV_VARS = {
     PLISIO_SECRET_KEY: '24N0-OAIybXVC5XqylDtM21BrWjXVLjiCKvpfVEJDU41xDIQhJSdiRXkPjSc6I8J',
     ADMIN_TELEGRAM_IDS: '6145005883',
     NODE_ENV: 'production',
-    PORT: '3000',
+    PORT: '8080',
     WEBHOOK_SECRET: 'wh_sec_9k2mN8pQ7xR4vL6zE3tY1uI5oA8cF2nB',
     JWT_SECRET: 'jwt_9x7K2mP5qR8vL3nE6tY4uI1oA9cF7bN2sG5hJ8kM1pQ4rT6wZ3xC'
 };
@@ -60,16 +60,10 @@ class RailwaySetup {
         }
     }
 
-    async addPostgreSQL() {
-        console.log('🗄️ Adding PostgreSQL database...');
-        try {
-            execSync('railway add postgresql', { stdio: 'inherit' });
-            console.log('✅ PostgreSQL database added successfully');
-            console.log('📝 DATABASE_URL will be automatically provided by Railway');
-        } catch (error) {
-            console.error('❌ Failed to add PostgreSQL:', error.message);
-            console.log('💡 You can add PostgreSQL manually from Railway dashboard');
-        }
+    async setupDatabase() {
+        console.log('💾 Database Configuration...');
+        console.log('✅ Using local SQLite database - no external database required');
+        console.log('📁 Database file will be created automatically on first run');
     }
 
     async deployProject() {
@@ -120,8 +114,8 @@ class RailwaySetup {
         // Setup environment variables
         await this.setupEnvironmentVariables();
         
-        // Add PostgreSQL
-        await this.addPostgreSQL();
+        // Setup database
+        await this.setupDatabase();
         
         // Deploy project
         await this.deployProject();
