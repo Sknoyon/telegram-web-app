@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "migrate": "node migrations/migrate.js",
     "railway-setup": "node railway-setup.js",
+    "railway-debug": "node railway-debug.js",
     "deploy": "railway up"
   },
   "dependencies": {

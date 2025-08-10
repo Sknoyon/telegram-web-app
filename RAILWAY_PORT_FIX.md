@@ -4,7 +4,10 @@
 Your Railway deployment health checks are failing with "service unavailable" because Railway doesn't know which port to check.
 
 ## Root Cause
-According to Railway documentation, when using health checks, you MUST set a PORT environment variable in your Railway service settings.
+According to Railway documentation <mcreference link="https://docs.railway.com/guides/public-networking" index="3">3</mcreference>, when using health checks, you MUST set a PORT environment variable in your Railway service settings. <mcreference link="https://docs.railway.com/guides/variables" index="1">1</mcreference>
+
+## ✅ Confirmed Working Locally
+Our debug script confirms the health endpoint works perfectly on port 8080 locally. The issue is Railway configuration.
 
 ## Solution
 
@@ -12,9 +15,11 @@ According to Railway documentation, when using health checks, you MUST set a POR
 1. Go to your Railway project dashboard
 2. Click on your service
 3. Go to "Variables" tab
-4. Add a new environment variable:
+4. Click "New Variable" <mcreference link="https://docs.railway.com/guides/variables" index="1">1</mcreference>
+5. Add a new environment variable:
    - **Name**: `PORT`
    - **Value**: `8080`
+6. Click "Add" to save the variable
 
 ### Step 2: Verify Other Required Variables
 Ensure these variables are also set:
