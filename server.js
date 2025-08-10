@@ -702,14 +702,22 @@ class Server {
             await this.orchestrator.startWorkflows();
             console.log('✅ Advanced workflows started');
             
+            // Ensure proper port configuration for Railway
+            const finalPort = process.env.PORT || this.port;
+            const finalHost = this.config.environment === 'railway' ? '0.0.0.0' : this.host;
+            
+            console.log(`🔧 Starting server on ${finalHost}:${finalPort}`);
+            console.log(`📍 Environment: ${this.config.environment}`);
+            console.log(`🌐 PORT env var: ${process.env.PORT || 'not set'}`);
+            
             // Start Express server
-            this.app.listen(this.port, this.host, () => {
+            this.app.listen(finalPort, finalHost, () => {
                 console.log(`\n🚀 Advanced Crypto Store started successfully!`);
                 console.log(`📍 Environment: ${this.config.environment}`);
-                console.log(`🌐 Server: http://${this.host}:${this.port}`);
-                console.log(`📊 Dashboard: http://${this.host}:${this.port}/dashboard`);
-                console.log(`🔍 GraphQL: http://${this.host}:${this.port}/graphql`);
-                console.log(`📈 Metrics: http://${this.host}:${this.port}/api/metrics`);
+                console.log(`🌐 Server: http://${finalHost}:${finalPort}`);
+                console.log(`📊 Dashboard: http://${finalHost}:${finalPort}/dashboard`);
+                console.log(`🔍 GraphQL: http://${finalHost}:${finalPort}/graphql`);
+                console.log(`📈 Metrics: http://${finalHost}:${finalPort}/api/metrics`);
                 
                 if (process.env.BASE_URL) {
                     console.log(`🛍️ Store URL: ${process.env.BASE_URL}/store`);
@@ -717,9 +725,9 @@ class Server {
                     console.log(`📊 Dashboard URL: ${process.env.BASE_URL}/dashboard`);
                     console.log(`🔗 Health Check: ${process.env.BASE_URL}/health`);
                 } else {
-                    console.log(`🛍️ Store URL: http://${this.host}:${this.port}/store`);
-                    console.log(`⚙️ Admin URL: http://${this.host}:${this.port}/admin`);
-                    console.log(`🔗 Health Check: http://${this.host}:${this.port}/health`);
+                    console.log(`🛍️ Store URL: http://${finalHost}:${finalPort}/store`);
+                    console.log(`⚙️ Admin URL: http://${finalHost}:${finalPort}/admin`);
+                    console.log(`🔗 Health Check: http://${finalHost}:${finalPort}/health`);
                 }
                 
                 // Environment-specific instructions
