@@ -1,6 +1,6 @@
 {
   "name": "telegram-crypto-store",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Telegram Web Store with Crypto Payment Integration using Plisio",
   "main": "server.js",
   "scripts": {
